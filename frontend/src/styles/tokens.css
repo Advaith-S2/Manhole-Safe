@@ -1,0 +1,161 @@
+/*
+  ManholeSafe design tokens — single source of truth for every page.
+  Dark is the default surface app-wide (Admin/Supervisor/Contractor/Worker
+  all share it now); values are the validated dataviz reference palette so
+  the same tokens drive both UI chrome and chart series without a second
+  color system.
+*/
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --surface-0: #0d0d0d;   /* page plane */
+  --surface-1: #1a1a19;   /* card / chart surface */
+  --surface-2: #232322;   /* raised card, input bg */
+  --surface-3: #2c2c2a;   /* hover wash, hairline gridline */
+
+  /* Ink */
+  --ink-primary: #ffffff;
+  --ink-secondary: #c3c2b7;
+  --ink-muted: #898781;
+  --ink-on-accent: #16130a;
+
+  /* Borders */
+  --border-hairline: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  /* Brand accent (categorical slot 4 / yellow-amber, used as the single
+     highlight color for primary actions, active nav, focus rings) */
+  --accent: #c98500;
+  --accent-ink: #16130a;
+
+  /* Status palette — fixed, never themed, never reused for series identity */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #e66767;
+
+  /* Categorical series (dark steps, fixed order — never cycle/reassign) */
+  --series-1: #3987e5; /* blue */
+  --series-2: #d95926; /* orange */
+  --series-3: #199e70; /* aqua */
+  --series-4: #c98500; /* yellow */
+  --series-5: #d55181; /* magenta */
+  --series-6: #008300; /* green */
+  --series-7: #9085e9; /* violet */
+  --series-8: #e66767; /* red */
+
+  /* Sequential (blue ramp, dark steps) */
+  --sequential-100: #184f95;
+  --sequential-300: #256abf;
+  --sequential-500: #3987e5;
+  --sequential-700: #86b6ef;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Touch targets (Supervisor/Worker mobile surfaces) */
+  --touch-target: 48px;
+}
+
+/* Light surface, opt-in only — used by the Worker confirmation page, which
+   is opened from an SMS link on an unknown device/context and reads better
+   on a plain light background than the app's default dark chrome. */
+[data-theme='light'] {
+  color-scheme: light;
+  --surface-0: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #f1f0ec;
+  --surface-3: #e1e0d9;
+  --ink-primary: #0b0b0b;
+  --ink-secondary: #52514e;
+  --ink-muted: #898781;
+  --ink-on-accent: #16130a;
+  --border-hairline: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.18);
+  --accent: #eda100;
+  --accent-ink: #16130a;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink-primary);
+  background: var(--surface-0);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
+}
+
+.display {
+  font-family: var(--font-display);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

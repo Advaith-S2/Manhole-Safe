@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Contractor {
+  id                  Int          @id @default(autoincrement())
+  username            String?      @unique
+  password            String?
+  name                String
+  // Kept as a flat string rather than a related SubContractor entity: for
+  // this project's scope a contractor has at most one sub-contractor name
+  // on file, not a many-to-many relationship across jobs. Revisit only if
+  // a contractor needs to track multiple distinct sub-contractors.
+  sub_contractor_name String?
+  workOrders          WorkOrder[]
+  supervisors         Supervisor[]
+}
+
+model Manhole {
+  id         Int          @id @default(autoincrement())
+  qr_code_id String       @unique
+  // Separate from qr_code_id (the human-readable label). This is the
+  // unguessable value actually encoded in the printed QR — generated
+  // server-side only, never client-supplied.
+  qr_token   String       @unique
+  ward       String
+  lat        Float
+  lng        Float
+  workOrders WorkOrder[]
+}
+
+model Supervisor {
+  id            Int          @id @default(autoincrement())
+  name          String
+  phone         String       @unique
+  password      String
+  contractor_id Int
+  is_active     Boolean      @default(true)
+  contractor    Contractor   @relation(fields: [contractor_id], references: [id])
+  workOrders    WorkOrder[]
+}
+
+model Admin {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  password String
+}
+
+model WorkOrder {
+  id                 Int          @id @default(autoincrement())
+  manhole_id         Int
+  contractor_id      Int
+  supervisor_id      Int
+  scheduled_time     DateTime
+  estimated_end_time DateTime?
+  status             String       @default("pending") // pending, in_progress, completed
+  payment_status     String       @default("pending") // pending, paid
+  created_at         DateTime     @default(now())
+
+  manhole            Manhole      @relation(fields: [manhole_id], references: [id])
+  contractor         Contractor   @relation(fields: [contractor_id], references: [id])
+  supervisor         Supervisor   @relation(fields: [supervisor_id], references: [id])
+  permitEntry        PermitEntry?
+
+  @@index([manhole_id, status])
+}
+
+model PermitEntry {
+  id                      Int       @id @default(autoincrement())
+  work_order_id           Int       @unique
+  worker_phone            String
+  emergency_contact_phone String?
+  entry_photo_path        String?
+  entry_time              DateTime? @default(now())
+  entry_lat               Float?
+  entry_lng               Float?
+  exit_photo_path         String?
+  exit_time               DateTime?
+  exit_lat                Float?
+  exit_lng                Float?
+  worker_confirmed_time   DateTime?
+  worker_confirm_expires_at DateTime?
+  // Deprecated: superseded by the entry_/exit_ split below. Left in place
+  // (not removed) because permitService.js still reads/writes it and this
+  // pass is schema/seed only — remove this column and the split fields'
+  // service-layer wiring together in the next pass.
+  location_missing        Boolean   @default(false)
+  // Split from a single undifferentiated flag: GPS drift (mismatch) and GPS
+  // never returning a value (missing) are distinct failure modes, and can
+  // occur independently at entry vs. exit.
+  entry_location_mismatch Boolean   @default(false)
+  exit_location_mismatch  Boolean   @default(false)
+  entry_location_missing  Boolean   @default(false)
+  exit_location_missing   Boolean   @default(false)
+  // Generated at exit-scan time (not entry) for the worker safety
+  // confirmation link. Random/unguessable, single-use via the _used flag.
+  worker_confirm_token      String?   @unique
+  worker_confirm_token_used Boolean   @default(false)
+  status                  String    @default("in_progress") // in_progress, pending_confirmation, unconfirmed, escalated, closed
+  admin_resolution_note   String?
+  // Advisory only, matching the GPS-mismatch pattern: a low-confidence or
+  // negative PPE detection is recorded and surfaced to admins, never blocks
+  // permit opening. Checked against the entry photo at open time.
+  ppe_verified            Boolean   @default(false)
+  ppe_detection_result    String?
+
+  workOrder               WorkOrder @relation(fields: [work_order_id], references: [id])
+  smsLogs                 SmsLog[]
+
+  // The timer job polls every 30s by status, and reads entry_time for
+  // stuck/overdue permits. Both were previously unindexed full-table scans.
+  @@index([status])
+  @@index([entry_time])
+  @@index([worker_confirm_expires_at])
+}
+
+model SmsLog {
+  id              Int         @id @default(autoincrement())
+  permit_entry_id Int
+  message_type    String      // entry, exit, escalation_supervisor, escalation_nodal
+  delivery_status String      @default("sent") // sent, delivered, failed
+  sent_at         DateTime    @default(now())
+
+  permitEntry     PermitEntry @relation(fields: [permit_entry_id], references: [id])
+
+  // Timer job filters smsLogs by (permit_entry_id, message_type) for every
+  // active permit on every poll; this was an unindexed lookup.
+  @@index([permit_entry_id, message_type])
+}

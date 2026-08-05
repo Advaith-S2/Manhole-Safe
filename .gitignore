@@ -1,0 +1,19 @@
+# Node
+**/node_modules/
+
+# Environment
+.env
+
+# Database
+backend/prisma/dev.db
+
+# Uploaded images
+backend/uploads/*.jpg
+backend/uploads/*.jpeg
+backend/uploads/*.png
+
+# ML models
+*.pt
+
+# Python cache
+__pycache__/
